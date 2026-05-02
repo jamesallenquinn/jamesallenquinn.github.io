@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Feed Log" />
+  <title>Twin Feeding Log</title>
+
+  <style>
+    :root {
+      --bg: #f7f3ee;
+      --card: #ffffff;
+      --text: #2b2b2b;
+      --muted: #7a7a7a;
+      --rowan: #6fa8dc;
+      --julian: #93c47d;
+      --danger: #d9534f;
+      --border: #e7ded4;
+      --shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 18px 0 30px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 8px 0 4px;
+      font-size: 28px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .cards {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .baby-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .baby-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .baby-name {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .last-fed {
+      text-align: right;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .timer {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin: 8px 0 4px;
+    }
+
+    .timer-label {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      width: 100%;
+      padding: 18px 16px;
+      font-size: 21px;
+      font-weight: 800;
+      color: white;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.98);
+      opacity: 0.92;
+    }
+
+    .rowan-btn {
+      background: var(--rowan);
+    }
+
+    .julian-btn {
+      background: var(--julian);
+    }
+
+    .section-title {
+      margin: 24px 2px 10px;
+      font-size: 20px;
+    }
+
+    .logs {
+      display: grid;
+      gap: 14px;
+    }
+
+    .log-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .log-header h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .small-clear {
+      width: auto;
+      padding: 8px 10px;
+      font-size: 13px;
+      border-radius: 12px;
+      background: #eee;
+      color: #555;
+      font-weight: 700;
+    }
+
+    .entry {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid var(--border);
+      padding: 12px 0;
+      font-size: 17px;
+    }
+
+    .entry:first-of-type {
+      border-top: 0;
+    }
+
+    .entry-date {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .entry-age {
+      color: var(--muted);
+      text-align: right;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 15px;
+      padding: 10px 0 4px;
+    }
+
+    .footer-actions {
+      margin-top: 22px;
+    }
+
+    .clear-all {
+      background: var(--danger);
+      font-size: 16px;
+      padding: 14px;
+    }
+
+    .hint {
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.4;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header>
+      <h1>Twin Feeding Log</h1>
+      <p class="subtitle">Tap a button when Julian or Rowan eats.</p>
+    </header>
+
+    <section class="cards">
+      <div class="baby-card">
+        <div class="baby-top">
+          <h2 class="baby-name">Rowan</h2>
+          <div class="last-fed" id="rowanLastFed">No feedings yet</div>
+        </div>
+        <div class="timer" id="rowanTimer">--</div>
+        <div class="timer-label">since last feeding</div>
+        <button class="rowan-btn" onclick="logFeeding('Rowan')">Rowan Ate</button>
+      </div>
+
+      <div class="baby-card">
+        <div class="baby-top">
+          <h2 class="baby-name">Julian</h2>
+          <div class="last-fed" id="julianLastFed">No feedings yet</div>
+        </div>
+        <div class="timer" id="julianTimer">--</div>
+        <div class="timer-label">since last feeding</div>
+        <button class="julian-btn" onclick="logFeeding('Julian')">Julian Ate</button>
+      </div>
+    </section>
+
+    <h2 class="section-title">Separate Logs</h2>
+
+    <section class="logs">
+      <div class="log-card">
+        <div class="log-header">
+          <h3>Rowan</h3>
+          <button class="small-clear" onclick="clearBaby('Rowan')">Clear Rowan</button>
+        </div>
+        <div id="rowanLog"></div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <h3>Julian</h3>
+          <button class="small-clear" onclick="clearBaby('Julian')">Clear Julian</button>
+        </div>
+        <div id="julianLog"></div>
+      </div>
+    </section>
+
+    <div class="footer-actions">
+      <button class="clear-all" onclick="clearAll()">Clear All Logs</button>
+    </div>
+
+    <p class="hint">
+      This saves only on this iPhone/browser using local storage.
+    </p>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "twinFeedingLog_v2";
+    let feedings = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+    function saveFeedings() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(feedings));
+    }
+
+    function logFeeding(baby) {
+      feedings.unshift({
+        baby: baby,
+        timestamp: new Date().toISOString()
+      });
+
+      saveFeedings();
+      render();
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString([], {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function timeSince(timestamp) {
+      const then = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - then;
+
+      if (diffMs < 0) return "0 min";
+
+      const totalMinutes = Math.floor(diffMs / 60000);
+      const days = Math.floor(totalMinutes / 1440);
+      const hours = Math.floor((totalMinutes % 1440) / 60);
+      const minutes = totalMinutes % 60;
+
+      if (days > 0) return `${days}d ${hours}h`;
+      if (hours > 0) return `${hours}h ${minutes}m`;
+      return `${minutes}m`;
+    }
+
+    function getLastFeeding(baby) {
+      return feedings.find(item => item.baby === baby);
+    }
+
+    function renderBabySummary(baby, prefix) {
+      const last = getLastFeeding(baby);
+      const lastFedEl = document.getElementById(`${prefix}LastFed`);
+      const timerEl = document.getElementById(`${prefix}Timer`);
+
+      if (!last) {
+        lastFedEl.textContent = "No feedings yet";
+        timerEl.textContent = "--";
+        return;
+      }
+
+      const date = new Date(last.timestamp);
+      lastFedEl.innerHTML = `Last fed<br><strong>${formatTime(date)}</strong>`;
+      timerEl.textContent = timeSince(last.timestamp);
+    }
+
+    function renderLog(baby, elementId) {
+      const container = document.getElementById(elementId);
+      const babyFeedings = feedings.filter(item => item.baby === baby);
+
+      if (babyFeedings.length === 0) {
+        container.innerHTML = `<div class="empty">No feedings logged yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = babyFeedings.map(item => {
+        const date = new Date(item.timestamp);
+        return `
+          <div class="entry">
+            <div>
+              <strong>${formatTime(date)}</strong>
+              <div class="entry-date">${formatDate(date)}</div>
+            </div>
+            <div class="entry-age">${timeSince(item.timestamp)} ago</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function clearBaby(baby) {
+      if (confirm(`Clear all ${baby} feedings?`)) {
+        feedings = feedings.filter(item => item.baby !== baby);
+        saveFeedings();
+        render();
+      }
+    }
+
+    function clearAll() {
+      if (confirm("Clear all feeding logs?")) {
+        feedings = [];
+        saveFeedings();
+        render();
+      }
+    }
+
+    function render() {
+      renderBabySummary("Rowan", "rowan");
+      renderBabySummary("Julian", "julian");
+      renderLog("Rowan", "rowanLog");
+      renderLog("Julian", "julianLog");
+    }
+
+    render();
+    setInterval(render, 30000);
+  </script>
+</body>
+</html>
