@@ -1,5 +1,5 @@
 // Bills service worker: makes the app load offline once it has been opened once.
-const CACHE = "bills-v1";
+const CACHE = "bills-v2";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", event => {
