@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bills" />
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="icon" href="icon-192.png" />
+  <title>Bills</title>
+
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --card2: #f7f7fa;
+      --text: #1c1c1e;
+      --muted: #6e6e73;
+      --faint: #aeaeb2;
+      --border: #e5e5ea;
+      --accent: #0a84ff;
+      --green: #30d158;
+      --red: #ff3b30;
+      --orange: #ff9f0a;
+      --shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --tab-h: 58px;
+      --overlay: rgba(0,0,0,0.35);
+      --check-bg: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card: #1c1c1e;
+        --card2: #2c2c2e;
+        --text: #f2f2f7;
+        --muted: #98989f;
+        --faint: #636366;
+        --border: #2c2c2e;
+        --shadow: 0 2px 12px rgba(0,0,0,0.4);
+        --overlay: rgba(0,0,0,0.6);
+        --check-bg: #1c1c1e;
+      }
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior-y: none;
+    }
+    button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    input, select, textarea { -webkit-appearance: none; appearance: none; }
+
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      min-height: 100%;
+      padding: calc(env(safe-area-inset-top) + 10px) 16px calc(var(--tab-h) + env(safe-area-inset-bottom) + 90px);
+    }
+
+    .topbar {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 6px 2px 12px;
+    }
+    .topbar h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.6px; }
+    .topbar .sub { color: var(--muted); font-size: 15px; margin-top: 2px; }
+
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    /* Summary */
+    .summary { background: linear-gradient(135deg, #0a84ff, #5e5ce6); color: #fff; box-shadow: 0 8px 24px rgba(10,132,255,0.25); }
+    .summary .label { font-size: 13px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+    .summary .big { font-size: 40px; font-weight: 800; letter-spacing: -1px; margin: 2px 0 10px; }
+    .summary .row { display: flex; gap: 14px; }
+    .summary .row > div { flex: 1; }
+    .summary .small { font-size: 12px; opacity: 0.85; }
+    .summary .val { font-size: 19px; font-weight: 700; }
+    .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.3); overflow: hidden; margin: 12px 0 8px; }
+    .bar > span { display: block; height: 100%; background: #fff; border-radius: 4px; transition: width .3s; }
+
+    .section-title {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin: 20px 4px 8px; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted);
+    }
+    .section-title.overdue { color: var(--red); }
+    .section-title.today { color: var(--orange); }
+    .section-title .amt { font-weight: 600; text-transform: none; letter-spacing: 0; }
+
+    .list { background: var(--card); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+    .row-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px 12px 12px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      cursor: pointer;
+      user-select: none; -webkit-user-select: none;
+    }
+    .row-item:last-child { border-bottom: 0; }
+    .row-item:active { background: var(--card2); }
+    .row-item .stripe { position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 0 3px 3px 0; }
+    .icon {
+      width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .row-main { flex: 1; min-width: 0; }
+    .row-name { font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-sub { color: var(--muted); font-size: 13.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-sub.due-overdue { color: var(--red); font-weight: 600; }
+    .row-sub.due-today { color: var(--orange); font-weight: 600; }
+    .row-right { text-align: right; flex-shrink: 0; }
+    .row-amt { font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+    .row-amt.small { font-size: 15px; }
+    .row-tag { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .badge {
+      display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 6px;
+      background: var(--card2); color: var(--muted); margin-left: 6px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .badge.auto { background: rgba(48,209,88,0.15); color: #1f9d46; }
+    @media (prefers-color-scheme: dark) { .badge.auto { color: #30d158; } }
+
+    .check {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid var(--faint); background: var(--check-bg);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 16px; font-weight: 800; margin-left: 4px;
+    }
+    .check.on { background: var(--green); border-color: var(--green); }
+    .check.skipped { background: var(--faint); border-color: var(--faint); }
+    .row-item.paid .row-name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+    .row-item.paid .row-amt { color: var(--muted); }
+    .row-item.paused { opacity: 0.55; }
+
+    .empty { text-align: center; color: var(--muted); padding: 40px 20px; line-height: 1.5; }
+    .empty .big-emoji { font-size: 48px; margin-bottom: 8px; }
+    .empty .btn { margin-top: 12px; width: auto; display: inline-block; padding: 12px 20px; }
+
+    /* Month nav */
+    .month-nav { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 14px; }
+    .month-nav h2 { margin: 0; font-size: 22px; font-weight: 800; }
+    .month-nav button {
+      background: var(--card); border: 0; border-radius: 12px; width: 40px; height: 40px; font-size: 20px; font-weight: 700; box-shadow: var(--shadow); color: var(--accent);
+    }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .stat { background: var(--card); border-radius: 16px; padding: 12px; box-shadow: var(--shadow); }
+    .stat .l { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .stat .v { font-size: 20px; font-weight: 800; margin-top: 2px; letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
+    .stat .v.green { color: var(--green); }
+    .stat .v.orange { color: var(--orange); }
+
+    .cat-bars { display: grid; gap: 10px; }
+    .cat-bar .top { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+    .cat-bar .top b { font-weight: 600; }
+    .cat-bar .track { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; }
+    .cat-bar .track span { display: block; height: 100%; border-radius: 4px; }
+
+    /* Buttons */
+    .btn {
+      display: block; width: 100%; border: 0; border-radius: 14px; padding: 15px 16px;
+      font-size: 17px; font-weight: 700; background: var(--accent); color: #fff;
+    }
+    .btn:active { opacity: 0.85; transform: scale(0.99); }
+    .btn.secondary { background: var(--card2); color: var(--text); }
+    .btn.danger { background: rgba(255,59,48,0.12); color: var(--red); }
+    .btn.green { background: var(--green); }
+    .btn.ghost { background: transparent; color: var(--accent); }
+    .btn + .btn { margin-top: 10px; }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; margin: 0; }
+
+    .fab {
+      position: fixed; right: 18px; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 16px);
+      width: 58px; height: 58px; border-radius: 50%; border: 0; background: var(--accent); color: #fff;
+      font-size: 32px; font-weight: 300; line-height: 1; box-shadow: 0 8px 20px rgba(10,132,255,0.4);
+      display: flex; align-items: center; justify-content: center; z-index: 20;
+    }
+    .fab:active { transform: scale(0.94); }
+
+    /* Tab bar */
+    .tabbar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+      background: color-mix(in srgb, var(--card) 88%, transparent);
+      -webkit-backdrop-filter: saturate(180%) blur(16px); backdrop-filter: saturate(180%) blur(16px);
+      border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .tabbar .inner { max-width: 560px; margin: 0 auto; display: flex; height: var(--tab-h); }
+    .tab {
+      flex: 1; border: 0; background: transparent; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      font-size: 10.5px; font-weight: 600;
+    }
+    .tab .ti { font-size: 22px; line-height: 1; }
+    .tab.active { color: var(--accent); }
+
+    /* Sheet */
+    .overlay {
+      position: fixed; inset: 0; background: var(--overlay); z-index: 50;
+      opacity: 0; transition: opacity .2s;
+    }
+    .overlay.show { opacity: 1; }
+    .sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 51;
+      background: var(--bg); border-radius: 22px 22px 0 0;
+      max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 8px 16px calc(env(safe-area-inset-bottom) + 20px);
+      transform: translateY(100%); transition: transform .28s cubic-bezier(.2,.8,.2,1);
+      max-width: 600px; margin: 0 auto;
+    }
+    .sheet.show { transform: translateY(0); }
+    .sheet .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--faint); margin: 4px auto 12px; }
+    .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .sheet-head h2 { margin: 0; font-size: 22px; font-weight: 800; }
+    .sheet-head button.link { background: transparent; border: 0; color: var(--accent); font-weight: 600; font-size: 17px; padding: 6px 0; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 4px 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .input {
+      width: 100%; border: 0; border-radius: 12px; background: var(--card); padding: 13px 14px; font-size: 17px; box-shadow: var(--shadow);
+      color: var(--text);
+    }
+    .input:focus { outline: 2px solid var(--accent); }
+    textarea.input { min-height: 70px; resize: vertical; }
+    .amount-wrap { position: relative; }
+    .amount-wrap .input { padding-left: 34px; font-size: 22px; font-weight: 700; }
+    .amount-wrap .cur { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 20px; font-weight: 700; color: var(--muted); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      border: 2px solid transparent; border-radius: 999px; padding: 8px 12px; font-size: 14px; font-weight: 600;
+      background: var(--card); box-shadow: var(--shadow); display: flex; align-items: center; gap: 6px; color: var(--text);
+    }
+    .chip .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .chip.on { border-color: var(--chip-color, var(--accent)); background: color-mix(in srgb, var(--chip-color, var(--accent)) 14%, var(--card)); }
+    .seg { display: flex; background: var(--card); border-radius: 12px; padding: 4px; box-shadow: var(--shadow); gap: 3px; overflow-x: auto; }
+    .seg button { flex: 1; border: 0; background: transparent; padding: 9px 4px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .seg button.on { background: var(--accent); color: #fff; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; background: var(--card); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow); margin-bottom: 10px; }
+    .toggle-row .t { font-weight: 600; }
+    .toggle-row .d { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .switch { width: 51px; height: 31px; border-radius: 16px; background: var(--faint); position: relative; border: 0; flex-shrink: 0; transition: background .2s; }
+    .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: left .2s; }
+    .switch.on { background: var(--green); }
+    .switch.on::after { left: 22px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .occ-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .occ-head .icon { width: 56px; height: 56px; border-radius: 16px; font-size: 28px; }
+    .occ-head .n { font-size: 22px; font-weight: 800; }
+    .occ-head .s { color: var(--muted); font-size: 14px; }
+    .occ-amt { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin: 4px 0 16px; }
+
+    .toast {
+      position: fixed; left: 50%; transform: translateX(-50%) translateY(20px);
+      bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 22px);
+      background: #1c1c1e; color: #fff; border-radius: 14px; padding: 12px 16px; z-index: 60;
+      display: flex; align-items: center; gap: 16px; font-size: 15px; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35); opacity: 0; pointer-events: none; transition: all .25s;
+      max-width: calc(100% - 32px);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .toast button { background: transparent; border: 0; color: #64d2ff; font-weight: 800; padding: 0; font-size: 15px; }
+    @media (prefers-color-scheme: dark) { .toast { background: #3a3a3c; } }
+
+    .help { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 6px 4px 10px; }
+    .help ol { padding-left: 20px; margin: 6px 0; }
+    .help li { margin-bottom: 4px; }
+    .more-item { display: flex; align-items: center; gap: 12px; padding: 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .more-item:last-child { border-bottom: 0; }
+    .more-item:active { background: var(--card2); }
+    .more-item .mi { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0; }
+    .more-item .mt { font-weight: 600; }
+    .more-item .md { font-size: 13px; color: var(--muted); margin-top: 1px; }
+    .more-item .chev { margin-left: auto; color: var(--faint); font-size: 20px; }
+
+    .import-row { display: grid; grid-template-columns: 30px 1fr; gap: 10px; padding: 12px 12px; border-bottom: 1px solid var(--border); align-items: start; }
+    .import-row:last-child { border-bottom: 0; }
+    .import-row.off { opacity: 0.5; }
+    .import-row .check { margin: 8px 0 0; }
+    .import-row input.name { font-weight: 700; }
+    .import-row .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .import-row .meta { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+    .input.sm { padding: 9px 10px; font-size: 15px; box-shadow: none; background: var(--card2); }
+    select.input.sm { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 26px; }
+    .hidden { display: none !important; }
+    .muted { color: var(--muted); }
+    .center { text-align: center; }
+    .mt { margin-top: 12px; }
+    .sticky-bottom { position: sticky; bottom: 0; background: var(--bg); padding-top: 10px; margin-top: 10px; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Upcoming</h1>
+        <div class="sub" id="pageSub"></div>
+      </div>
+    </header>
+    <main id="view"></main>
+  </div>
+
+  <button class="fab" data-action="add" aria-label="Add bill">+</button>
+
+  <nav class="tabbar">
+    <div class="inner">
+      <button class="tab active" data-action="tab" data-tab="upcoming"><span class="ti">📅</span>Upcoming</button>
+      <button class="tab" data-action="tab" data-tab="month"><span class="ti">📊</span>Month</button>
+      <button class="tab" data-action="tab" data-tab="bills"><span class="ti">🧾</span>Bills</button>
+      <button class="tab" data-action="tab" data-tab="more"><span class="ti">⚙️</span>More</button>
+    </div>
+  </nav>
+
+  <div id="sheetRoot"></div>
+  <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastBtn" class="hidden"></button></div>
+  <input type="file" id="icsFile" accept=".ics,text/calendar,text/plain" class="hidden" />
+  <input type="file" id="jsonFile" accept=".json,application/json,text/plain" class="hidden" />
+
+  <script>
+    // ---------- Constants ----------
+    const STORAGE_KEY = "billTracker_v1";
+    const CATEGORIES = [
+      { id: "housing",       name: "Housing",          icon: "🏠", color: "#4f7be8" },
+      { id: "utilities",     name: "Utilities",        icon: "💡", color: "#f59e0b" },
+      { id: "subscriptions", name: "Subscriptions",    icon: "📺", color: "#8b5cf6" },
+      { id: "insurance",     name: "Insurance",        icon: "🛡️", color: "#10b981" },
+      { id: "debt",          name: "Loans & Debt",     icon: "💳", color: "#ef4444" },
+      { id: "phone",         name: "Phone & Internet", icon: "📱", color: "#06b6d4" },
+      { id: "transport",     name: "Transportation",   icon: "🚗", color: "#f97316" },
+      { id: "health",        name: "Health",           icon: "💊", color: "#ec4899" },
+      { id: "family",        name: "Kids & Family",    icon: "🧸", color: "#84cc16" },
+      { id: "other",         name: "Other",            icon: "📦", color: "#6b7280" },
+    ];
+    const FREQS = [
+      { id: "weekly",    name: "Weekly",     short: "wk",   perMonth: 52 / 12 },
+      { id: "biweekly",  name: "Biweekly",   short: "2 wks", perMonth: 26 / 12 },
+      { id: "monthly",   name: "Monthly",    short: "mo",   perMonth: 1 },
+      { id: "quarterly", name: "Quarterly",  short: "qtr",  perMonth: 1 / 3 },
+      { id: "yearly",    name: "Yearly",     short: "yr",   perMonth: 1 / 12 },
+      { id: "once",      name: "Once",       short: "once", perMonth: 0 },
+    ];
+    const CATEGORY_KEYWORDS = {
+      housing: ["rent", "mortgage", "hoa", "lease", "landlord", "apartment"],
+      utilities: ["electric", "power", "energy", "gas", "water", "sewer", "trash", "garbage", "utility", "utilities", "pg&e", "duke", "con ed", "coned"],
+      subscriptions: ["netflix", "spotify", "hulu", "disney", "hbo", "max", "prime", "amazon", "youtube", "icloud", "apple", "google one", "subscription", "paramount", "peacock", "audible", "kindle", "patreon", "dropbox", "adobe", "microsoft", "xbox", "playstation", "nintendo", "chatgpt", "claude", "openai", "ring", "nest", "peloton", "gym", "membership", "costco", "sam's"],
+      insurance: ["insurance", "geico", "progressive", "state farm", "allstate", "liberty", "usaa", "nationwide", "farmers", "premium", "policy"],
+      debt: ["loan", "credit card", "credit", "visa", "mastercard", "amex", "american express", "discover", "capital one", "chase", "citi", "student", "sallie", "navient", "nelnet", "affirm", "klarna", "payment plan", "personal loan", "minimum payment", "card"],
+      phone: ["verizon", "at&t", "att", "t-mobile", "tmobile", "sprint", "mint", "visible", "cricket", "phone", "cell", "mobile", "internet", "wifi", "comcast", "xfinity", "spectrum", "cox", "fios", "fiber", "starlink", "cable"],
+      transport: ["car", "auto", "toyota", "honda", "ford", "tesla", "gm", "chevy", "nissan", "subaru", "lease", "parking", "toll", "ezpass", "e-zpass", "transit", "metro", "fuel", "registration", "dmv"],
+      health: ["health", "dental", "vision", "doctor", "medical", "pharmacy", "prescription", "therapy", "orthodont", "hospital", "copay"],
+      family: ["daycare", "day care", "childcare", "nanny", "babysit", "school", "tuition", "preschool", "diaper", "kids", "twins", "baby", "camp", "lessons"],
+    };
+
+    // ---------- State ----------
+    let state = loadState();
+    let currentTab = "upcoming";
+    let monthCursor = startOfMonthKey(todayKey());
+    let undoStack = null;
+    let importDraft = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          return { bills: s.bills || [], payments: s.payments || [], settings: s.settings || {} };
+        }
+      } catch (e) { console.warn("Could not load state", e); }
+      return { bills: [], payments: [], settings: {} };
+    }
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+    function uid() {
+      return (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+    }
+
+    // ---------- Date helpers (all keys are local YYYY-MM-DD) ----------
+    function pad(n) { return String(n).padStart(2, "0"); }
+    function toKey(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+    function fromKey(k) { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); }
+    function todayKey() { return toKey(new Date()); }
+    function startOfMonthKey(k) { return k.slice(0, 7) + "-01"; }
+    function daysInMonth(y, m0) { return new Date(y, m0 + 1, 0).getDate(); }
+    function addDaysKey(k, n) { const d = fromKey(k); d.setDate(d.getDate() + n); return toKey(d); }
+    function addMonthsClamped(anchorKey, n) {
+      const a = fromKey(anchorKey);
+      const total = a.getMonth() + n;
+      const y = a.getFullYear() + Math.floor(total / 12);
+      const m0 = ((total % 12) + 12) % 12;
+      const day = Math.min(a.getDate(), daysInMonth(y, m0));
+      return toKey(new Date(y, m0, day));
+    }
+    function dayDiff(aKey, bKey) { return Math.round((fromKey(bKey) - fromKey(aKey)) / 86400000); }
+    function monthsBetween(aKey, bKey) {
+      const a = fromKey(aKey), b = fromKey(bKey);
+      return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+    }
+    function monthLabel(k, long) {
+      return fromKey(k).toLocaleDateString([], { month: long ? "long" : "short", year: "numeric" });
+    }
+    function shortDate(k) {
+      const d = fromKey(k);
+      const opts = { month: "short", day: "numeric" };
+      if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+      return d.toLocaleDateString([], opts);
+    }
+    function dueText(k) {
+      const diff = dayDiff(todayKey(), k);
+      if (diff === 0) return "Due today";
+      if (diff === 1) return "Due tomorrow";
+      if (diff === -1) return "1 day overdue";
+      if (diff < 0) return `${-diff} days overdue`;
+      if (diff < 7) return `Due ${fromKey(k).toLocaleDateString([], { weekday: "long" })}`;
+      return `Due ${shortDate(k)}`;
+    }
+
+    // ---------- Money ----------
+    const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+    function fmt(n) { return money.format(Number(n) || 0); }
+    function parseAmount(s) {
+      const n = parseFloat(String(s).replace(/[^0-9.\-]/g, ""));
+      return isNaN(n) ? 0 : Math.round(n * 100) / 100;
+    }
+
+    // ---------- Bill helpers ----------
+    function cat(id) { return CATEGORIES.find(c => c.id === id) || CATEGORIES[CATEGORIES.length - 1]; }
+    function freq(id) { return FREQS.find(f => f.id === id) || FREQS[2]; }
+    function billColor(b) { return b.color || cat(b.category).color; }
+    function billIcon(b) { return b.icon || cat(b.category).icon; }
+    function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    function hexToRgba(hex, a) {
+      const h = hex.replace("#", "");
+      const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+      return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+    }
+
+    // nth occurrence (n >= 0) of a bill counting from its anchor date
+    function nthOccurrence(bill, n) {
+      switch (bill.frequency) {
+        case "weekly": return addDaysKey(bill.anchor, 7 * n);
+        case "biweekly": return addDaysKey(bill.anchor, 14 * n);
+        case "monthly": return addMonthsClamped(bill.anchor, n);
+        case "quarterly": return addMonthsClamped(bill.anchor, 3 * n);
+        case "yearly": return addMonthsClamped(bill.anchor, 12 * n);
+        case "once": return n === 0 ? bill.anchor : null;
+      }
+      return null;
+    }
+    // first n whose occurrence could be >= fromKey
+    function firstIndexAtOrAfter(bill, fromKey) {
+      if (fromKey <= bill.anchor) return 0;
+      let n = 0;
+      switch (bill.frequency) {
+        case "weekly": n = Math.floor(dayDiff(bill.anchor, fromKey) / 7) - 1; break;
+        case "biweekly": n = Math.floor(dayDiff(bill.anchor, fromKey) / 14) - 1; break;
+        case "monthly": n = monthsBetween(bill.anchor, fromKey) - 1; break;
+        case "quarterly": n = Math.floor(monthsBetween(bill.anchor, fromKey) / 3) - 1; break;
+        case "yearly": n = Math.floor(monthsBetween(bill.anchor, fromKey) / 12) - 1; break;
+        case "once": return 0;
+      }
+      n = Math.max(0, n);
+      while (n > 0 && nthOccurrence(bill, n) >= fromKey) n--;
+      while (nthOccurrence(bill, n) !== null && nthOccurrence(bill, n) < fromKey) n++;
+      return n;
+    }
+    // occurrences with since <= due, from <= due <= to
+    function occurrencesBetween(bill, fromKey, toKey) {
+      const start = bill.since && bill.since > fromKey ? bill.since : fromKey;
+      const out = [];
+      let n = firstIndexAtOrAfter(bill, start);
+      for (let i = 0; i < 400; i++) {
+        const k = nthOccurrence(bill, n++);
+        if (k === null || k > toKey) break;
+        if (k >= start) out.push(k);
+      }
+      return out;
+    }
+    function paymentMap() {
+      const m = new Map();
+      for (const p of state.payments) m.set(p.billId + "|" + p.due, p);
+      return m;
+    }
+    function nextUnpaid(bill, pm) {
+      pm = pm || paymentMap();
+      const start = bill.since || bill.anchor;
+      let n = firstIndexAtOrAfter(bill, start);
+      for (let i = 0; i < 600; i++) {
+        const k = nthOccurrence(bill, n++);
+        if (k === null) return null;
+        if (k < start) continue;
+        if (!pm.has(bill.id + "|" + k)) return k;
+      }
+      return null;
+    }
+    function monthlyEquivalent(bill) { return (Number(bill.amount) || 0) * freq(bill.frequency).perMonth; }
+
+    // Occurrences for a calendar month: generated + any recorded payments for that month
+    function monthOccurrences(monthKey) {
+      const from = startOfMonthKey(monthKey);
+      const d = fromKey(from);
+      const to = toKey(new Date(d.getFullYear(), d.getMonth(), daysInMonth(d.getFullYear(), d.getMonth())));
+      const pm = paymentMap();
+      const seen = new Set();
+      const out = [];
+      for (const bill of state.bills) {
+        if (bill.paused) continue;
+        for (const due of occurrencesBetween(bill, from, to)) {
+          seen.add(bill.id + "|" + due);
+          const p = pm.get(bill.id + "|" + due);
+          out.push({ bill, due, payment: p || null });
+        }
+      }
+      for (const p of state.payments) {
+        if (p.due < from || p.due > to || seen.has(p.billId + "|" + p.due)) continue;
+        const bill = state.bills.find(b => b.id === p.billId);
+        if (!bill) continue;
+        out.push({ bill, due: p.due, payment: p });
+      }
+      out.sort((a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : a.bill.name.localeCompare(b.bill.name));
+      return out;
+    }
+    function occAmount(o) { return o.payment && !o.payment.skipped && o.payment.amount != null ? Number(o.payment.amount) : Number(o.bill.amount) || 0; }
+    function monthStats(monthKey) {
+      const occs = monthOccurrences(monthKey);
+      let total = 0, paid = 0;
+      for (const o of occs) {
+        if (o.payment && o.payment.skipped) continue;
+        const a = occAmount(o);
+        total += a;
+        if (o.payment) paid += a;
+      }
+      return { occs, total, paid, remaining: total - paid };
+    }
+
+    // ---------- Actions ----------
+    function markPaid(billId, due, amount) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) return;
+      state.payments = state.payments.filter(p => !(p.billId === billId && p.due === due));
+      const p = { id: uid(), billId, due, paidAt: new Date().toISOString(), amount: amount != null ? amount : Number(bill.amount) || 0 };
+      state.payments.push(p);
+      save();
+      undoStack = () => { state.payments = state.payments.filter(x => x.id !== p.id); save(); render(); };
+      toast(`${bill.name} paid · ${fmt(p.amount)}`, "Undo", () => { if (undoStack) undoStack(); undoStack = null; });
+      render();
+    }
+    function markSkipped(billId, due) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) return;
+      state.payments = state.payments.filter(p => !(p.billId === billId && p.due === due));
+      const p = { id: uid(), billId, due, paidAt: new Date().toISOString(), amount: 0, skipped: true };
+      state.payments.push(p);
+      save();
+      toast(`Skipped ${bill.name} for ${shortDate(due)}`, "Undo", () => { state.payments = state.payments.filter(x => x.id !== p.id); save(); render(); });
+      render();
+    }
+    function markUnpaid(billId, due) {
+      state.payments = state.payments.filter(p => !(p.billId === billId && p.due === due));
+      save();
+      render();
+    }
+    function deleteBill(id) {
+      const bill = state.bills.find(b => b.id === id);
+      if (!bill) return;
+      if (!confirm(`Delete "${bill.name}" and its payment history?`)) return;
+      state.bills = state.bills.filter(b => b.id !== id);
+      state.payments = state.payments.filter(p => p.billId !== id);
+      save();
+      closeSheet();
+      render();
+    }
+
+    // ---------- Toast ----------
+    let toastTimer = null;
+    function toast(msg, btnLabel, btnFn) {
+      const t = document.getElementById("toast");
+      const b = document.getElementById("toastBtn");
+      document.getElementById("toastMsg").textContent = msg;
+      if (btnLabel) { b.textContent = btnLabel; b.classList.remove("hidden"); b.onclick = () => { hideToast(); btnFn && btnFn(); }; }
+      else { b.classList.add("hidden"); b.onclick = null; }
+      t.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(hideToast, 4000);
+    }
+    function hideToast() { document.getElementById("toast").classList.remove("show"); }
+
+    // ---------- Sheet ----------
+    function openSheet(html) {
+      const root = document.getElementById("sheetRoot");
+      root.innerHTML = `<div class="overlay" data-action="closeSheet"></div><div class="sheet" role="dialog"><div class="grab"></div>${html}</div>`;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        root.querySelector(".overlay").classList.add("show");
+        root.querySelector(".sheet").classList.add("show");
+      }));
+      return root.querySelector(".sheet");
+    }
+    function closeSheet() {
+      const root = document.getElementById("sheetRoot");
+      const ov = root.querySelector(".overlay"), sh = root.querySelector(".sheet");
+      if (!sh) return;
+      ov.classList.remove("show"); sh.classList.remove("show");
+      setTimeout(() => { if (root.querySelector(".sheet") === sh) root.innerHTML = ""; }, 280);
+    }
+    function sheetOpen() { return !!document.querySelector("#sheetRoot .sheet"); }
+
+    // ---------- Rendering ----------
+    function setHeader(title, sub) {
+      document.getElementById("pageTitle").textContent = title;
+      document.getElementById("pageSub").textContent = sub || "";
+    }
+    function render() {
+      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === currentTab));
+      const view = document.getElementById("view");
+      if (currentTab === "upcoming") view.innerHTML = renderUpcoming();
+      else if (currentTab === "month") view.innerHTML = renderMonth();
+      else if (currentTab === "bills") view.innerHTML = renderBills();
+      else view.innerHTML = renderMore();
+      document.querySelector(".fab").classList.toggle("hidden", currentTab === "more");
+    }
+
+    function iconHtml(bill, big) {
+      const c = billColor(bill);
+      return `<div class="icon" style="background:${hexToRgba(c, 0.16)}">${billIcon(bill)}</div>`;
+    }
+
+    function occRow(o, opts = {}) {
+      const bill = o.bill, due = o.due, p = o.payment;
+      const c = billColor(bill);
+      const diff = dayDiff(todayKey(), due);
+      const paid = !!p;
+      let sub;
+      if (p && p.skipped) sub = `Skipped · ${shortDate(due)}`;
+      else if (p) sub = `Paid ${shortDate(p.paidAt.slice(0, 10))}${opts.showDue ? " · due " + shortDate(due) : ""}`;
+      else sub = dueText(due);
+      const subCls = !paid && diff < 0 ? "due-overdue" : (!paid && diff === 0 ? "due-today" : "");
+      const amt = occAmount(o);
+      return `
+        <div class="row-item ${paid ? "paid" : ""}" data-action="occ" data-bill="${bill.id}" data-due="${due}">
+          <span class="stripe" style="background:${c}"></span>
+          ${iconHtml(bill)}
+          <div class="row-main">
+            <div class="row-name">${esc(bill.name)}${bill.autopay ? '<span class="badge auto">Auto</span>' : ""}</div>
+            <div class="row-sub ${subCls}">${sub} · ${esc(cat(bill.category).name)}</div>
+          </div>
+          <div class="row-right">
+            <div class="row-amt">${p && p.skipped ? "—" : fmt(amt)}</div>
+            ${bill.frequency !== "once" ? `<div class="row-tag">/ ${freq(bill.frequency).short}</div>` : ""}
+          </div>
+          <button class="check ${paid ? (p.skipped ? "skipped" : "on") : ""}" data-action="${paid ? "unpaid" : "paid"}" data-bill="${bill.id}" data-due="${due}" aria-label="${paid ? "Mark unpaid" : "Mark paid"}">${paid ? (p.skipped ? "–" : "✓") : ""}</button>
+        </div>`;
+    }
+
+    function renderUpcoming() {
+      const today = todayKey();
+      const now = new Date();
+      setHeader("Upcoming", now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }));
+      const active = state.bills.filter(b => !b.paused);
+      if (!state.bills.length) {
+        return `<div class="card empty"><div class="big-emoji">🧾</div><b>No bills yet</b><br>Add your first bill, or import them from your Google Calendar.<br>
+          <button class="btn" data-action="add">Add a bill</button>
+          <button class="btn secondary" data-action="tab" data-tab="more" style="margin-top:8px">Import from Google Calendar</button></div>`;
+      }
+      const pm = paymentMap();
+      const horizon = addDaysKey(today, 30);
+      const groups = { overdue: [], today: [], week: [], month: [], later: [] };
+      for (const bill of active) {
+        const occs = occurrencesBetween(bill, bill.since || bill.anchor, horizon).filter(k => !pm.has(bill.id + "|" + k));
+        if (occs.length === 0) {
+          const nk = nextUnpaid(bill, pm);
+          if (nk) groups.later.push({ bill, due: nk, payment: null });
+          continue;
+        }
+        for (const due of occs) {
+          const diff = dayDiff(today, due);
+          const o = { bill, due, payment: null };
+          if (diff < 0) groups.overdue.push(o);
+          else if (diff === 0) groups.today.push(o);
+          else if (diff <= 6) groups.week.push(o);
+          else groups.month.push(o);
+        }
+      }
+      const sortFn = (a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : a.bill.name.localeCompare(b.bill.name);
+      Object.values(groups).forEach(g => g.sort(sortFn));
+
+      const ms = monthStats(today);
+      const weekTotal = [...groups.overdue, ...groups.today, ...groups.week].reduce((s, o) => s + occAmount(o), 0);
+      const pct = ms.total ? Math.min(100, Math.round(ms.paid / ms.total * 100)) : 0;
+      let html = `
+        <div class="card summary">
+          <div class="label">${monthLabel(today, true)} · Remaining</div>
+          <div class="big">${fmt(ms.remaining)}</div>
+          <div class="row">
+            <div><div class="small">Month total</div><div class="val">${fmt(ms.total)}</div></div>
+            <div><div class="small">Paid</div><div class="val">${fmt(ms.paid)}</div></div>
+            <div><div class="small">Next 7 days</div><div class="val">${fmt(weekTotal)}</div></div>
+          </div>
+          <div class="bar"><span style="width:${pct}%"></span></div>
+          <div class="small">${pct}% of this month's bills paid</div>
+        </div>`;
+
+      const section = (title, cls, list) => {
+        if (!list.length) return "";
+        const total = list.reduce((s, o) => s + occAmount(o), 0);
+        return `<div class="section-title ${cls}"><span>${title}</span><span class="amt">${fmt(total)}</span></div><div class="list">${list.map(o => occRow(o)).join("")}</div>`;
+      };
+      html += section("Overdue", "overdue", groups.overdue);
+      html += section("Due today", "today", groups.today);
+      html += section("This week", "", groups.week);
+      html += section("Next 30 days", "", groups.month);
+      html += section("Later", "", groups.later);
+      if (!groups.overdue.length && !groups.today.length && !groups.week.length && !groups.month.length && !groups.later.length) {
+        html += `<div class="card empty"><div class="big-emoji">🎉</div><b>All caught up!</b><br>Nothing due right now.</div>`;
+      }
+      return html;
+    }
+
+    function renderMonth() {
+      const st = monthStats(monthCursor);
+      setHeader("Month", "Totals and history");
+      const isCurrent = monthCursor === startOfMonthKey(todayKey());
+      const byCat = new Map();
+      for (const o of st.occs) {
+        if (o.payment && o.payment.skipped) continue;
+        const id = o.bill.category;
+        byCat.set(id, (byCat.get(id) || 0) + occAmount(o));
+      }
+      const cats = [...byCat.entries()].sort((a, b) => b[1] - a[1]);
+      const maxCat = cats.length ? cats[0][1] : 1;
+      let html = `
+        <div class="month-nav">
+          <button data-action="monthPrev" aria-label="Previous month">‹</button>
+          <h2>${monthLabel(monthCursor, true)}${isCurrent ? "" : ""}</h2>
+          <button data-action="monthNext" aria-label="Next month">›</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="l">Total</div><div class="v">${fmt(st.total)}</div></div>
+          <div class="stat"><div class="l">Paid</div><div class="v green">${fmt(st.paid)}</div></div>
+          <div class="stat"><div class="l">Left</div><div class="v ${st.remaining > 0 ? "orange" : ""}">${fmt(st.remaining)}</div></div>
+        </div>`;
+      if (!isCurrent) html += `<button class="btn ghost" data-action="monthToday" style="margin:-6px 0 10px;padding:8px">Jump to this month</button>`;
+      if (cats.length) {
+        html += `<div class="card"><div class="section-title" style="margin:0 0 12px">By category</div><div class="cat-bars">` +
+          cats.map(([id, v]) => {
+            const c = cat(id);
+            return `<div class="cat-bar"><div class="top"><span>${c.icon} <b>${esc(c.name)}</b></span><span>${fmt(v)}</span></div><div class="track"><span style="width:${Math.round(v / maxCat * 100)}%;background:${c.color}"></span></div></div>`;
+          }).join("") + `</div></div>`;
+      }
+      if (!st.occs.length) {
+        html += `<div class="card empty"><div class="big-emoji">🗓️</div>No bills due in ${monthLabel(monthCursor, true)}.</div>`;
+      } else {
+        const unpaid = st.occs.filter(o => !o.payment);
+        const paid = st.occs.filter(o => o.payment);
+        if (unpaid.length) html += `<div class="section-title"><span>Unpaid</span><span class="amt">${fmt(unpaid.reduce((s, o) => s + occAmount(o), 0))}</span></div><div class="list">${unpaid.map(o => occRow(o)).join("")}</div>`;
+        if (paid.length) html += `<div class="section-title"><span>Paid</span><span class="amt">${fmt(paid.filter(o => !o.payment.skipped).reduce((s, o) => s + occAmount(o), 0))}</span></div><div class="list">${paid.map(o => occRow(o, { showDue: true })).join("")}</div>`;
+      }
+      return html;
+    }
+
+    function renderBills() {
+      const active = state.bills.filter(b => !b.paused);
+      const total = active.reduce((s, b) => s + monthlyEquivalent(b), 0);
+      setHeader("Bills", `${state.bills.length} bill${state.bills.length === 1 ? "" : "s"} · ≈ ${fmt(total)} / month`);
+      if (!state.bills.length) {
+        return `<div class="card empty"><div class="big-emoji">🧾</div><b>No bills yet</b><br>Tap + to add one.</div>`;
+      }
+      let html = "";
+      for (const c of CATEGORIES) {
+        const list = state.bills.filter(b => b.category === c.id).sort((a, b) => a.name.localeCompare(b.name));
+        if (!list.length) continue;
+        const sum = list.filter(b => !b.paused).reduce((s, b) => s + monthlyEquivalent(b), 0);
+        html += `<div class="section-title"><span style="color:${c.color}">${c.icon} ${esc(c.name)}</span><span class="amt">≈ ${fmt(sum)}/mo</span></div><div class="list">` +
+          list.map(b => {
+            const nk = b.paused ? null : nextUnpaid(b);
+            const sub = b.paused ? "Paused" : (nk ? `Next: ${shortDate(nk)}` : "No upcoming");
+            return `<div class="row-item ${b.paused ? "paused" : ""}" data-action="edit" data-bill="${b.id}">
+              <span class="stripe" style="background:${billColor(b)}"></span>
+              ${iconHtml(b)}
+              <div class="row-main"><div class="row-name">${esc(b.name)}${b.autopay ? '<span class="badge auto">Auto</span>' : ""}</div><div class="row-sub">${sub} · ${freq(b.frequency).name}</div></div>
+              <div class="row-right"><div class="row-amt">${b.variable ? "~" : ""}${fmt(b.amount)}</div><div class="row-tag">/ ${freq(b.frequency).short}</div></div>
+            </div>`;
+          }).join("") + `</div>`;
+      }
+      return html;
+    }
+
+    function renderMore() {
+      setHeader("More", "Import, backup, and settings");
+      const standalone = window.navigator.standalone || window.matchMedia("(display-mode: standalone)").matches;
+      return `
+        <div class="list" style="margin-bottom:14px">
+          <div class="more-item" data-action="importIcs"><div class="mi" style="background:#4f7be8">📥</div><div><div class="mt">Import from Google Calendar</div><div class="md">Bring in bills from a calendar export (.ics)</div></div><span class="chev">›</span></div>
+          <div class="more-item" data-action="add"><div class="mi" style="background:#30d158">➕</div><div><div class="mt">Add a bill</div><div class="md">Name, amount, category, and due date</div></div><span class="chev">›</span></div>
+        </div>
+        <div class="list" style="margin-bottom:14px">
+          <div class="more-item" data-action="exportJson"><div class="mi" style="background:#8b5cf6">💾</div><div><div class="mt">Back up data</div><div class="md">Save all bills and payments as a file</div></div><span class="chev">›</span></div>
+          <div class="more-item" data-action="importJson"><div class="mi" style="background:#f59e0b">📂</div><div><div class="mt">Restore from backup</div><div class="md">Load a backup file you saved earlier</div></div><span class="chev">›</span></div>
+          <div class="more-item" data-action="resetAll"><div class="mi" style="background:#ff3b30">🗑️</div><div><div class="mt" style="color:var(--red)">Erase all data</div><div class="md">Removes every bill and payment on this device</div></div><span class="chev">›</span></div>
+        </div>
+        ${standalone ? "" : `<div class="card"><b>📲 Add to your Home Screen</b><div class="help" style="margin-top:6px">In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>. The app opens full screen and works offline.</div></div>`}
+        <div class="help center">Data is stored only on this device. Back it up before switching phones.<br>v1.0</div>`;
+    }
+
+    // ---------- Bill form ----------
+    function openBillForm(existing, prefill) {
+      const isEdit = !!existing;
+      const b = existing ? { ...existing } : {
+        name: "", amount: "", category: "other", frequency: "monthly", anchor: todayKey(), since: todayKey(),
+        autopay: false, variable: false, notes: "", ...(prefill || {})
+      };
+      const nextDue = isEdit ? (nextUnpaid(b) || b.anchor) : b.anchor;
+      const html = `
+        <div class="sheet-head"><button class="link" data-action="closeSheet">Cancel</button><h2>${isEdit ? "Edit bill" : "New bill"}</h2><button class="link" data-action="saveBill" style="font-weight:800">Save</button></div>
+        <form id="billForm" onsubmit="return false" data-edit-id="${isEdit ? b.id : ""}" data-orig-due="${nextDue}">
+          <div class="field"><label>Name</label><input class="input" name="name" placeholder="e.g. Rent, Netflix, Electric" value="${esc(b.name)}" autocomplete="off" ${isEdit ? "" : "autofocus"} /></div>
+          <div class="field"><label>Amount</label><div class="amount-wrap"><span class="cur">$</span><input class="input" name="amount" inputmode="decimal" placeholder="0.00" value="${b.amount === "" ? "" : b.amount}" /></div></div>
+          <div class="field"><label>Category</label><div class="chips" id="catChips">${CATEGORIES.map(c => `<button type="button" class="chip ${c.id === b.category ? "on" : ""}" data-cat="${c.id}" style="--chip-color:${c.color}"><span class="dot" style="background:${c.color}"></span>${c.icon} ${esc(c.name)}</button>`).join("")}</div></div>
+          <div class="field"><label>Repeats</label><div class="seg" id="freqSeg">${FREQS.map(f => `<button type="button" class="${f.id === b.frequency ? "on" : ""}" data-freq="${f.id}">${f.name}</button>`).join("")}</div></div>
+          <div class="field"><label id="dueLabel">${isEdit ? "Next due date" : "First due date"}</label><input class="input" type="date" name="due" value="${nextDue}" /></div>
+          <div class="toggle-row"><div><div class="t">Autopay</div><div class="d">Paid automatically, just for your records</div></div><button type="button" class="switch ${b.autopay ? "on" : ""}" data-toggle="autopay"></button></div>
+          <div class="toggle-row"><div><div class="t">Amount varies</div><div class="d">Ask for the actual amount when marking paid</div></div><button type="button" class="switch ${b.variable ? "on" : ""}" data-toggle="variable"></button></div>
+          <div class="field" style="margin-top:14px"><label>Notes</label><textarea class="input" name="notes" placeholder="Account number, login, anything helpful">${esc(b.notes || "")}</textarea></div>
+          <input type="hidden" name="category" value="${b.category}" /><input type="hidden" name="frequency" value="${b.frequency}" />
+          <input type="hidden" name="autopay" value="${b.autopay ? 1 : 0}" /><input type="hidden" name="variable" value="${b.variable ? 1 : 0}" />
+          ${isEdit ? `
+            <div class="btn-row" style="margin-top:6px">
+              <button type="button" class="btn secondary" data-action="togglePause" data-bill="${b.id}">${b.paused ? "▶️ Resume bill" : "⏸ Pause bill"}</button>
+              <button type="button" class="btn danger" data-action="deleteBill" data-bill="${b.id}">Delete</button>
+            </div>` : ""}
+        </form>`;
+      const sheet = openSheet(html);
+      const form = sheet.querySelector("#billForm");
+      sheet.querySelector("#catChips").addEventListener("click", e => {
+        const chip = e.target.closest(".chip"); if (!chip) return;
+        sheet.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c === chip));
+        form.category.value = chip.dataset.cat;
+      });
+      sheet.querySelector("#freqSeg").addEventListener("click", e => {
+        const btn = e.target.closest("button[data-freq]"); if (!btn) return;
+        sheet.querySelectorAll("#freqSeg button").forEach(c => c.classList.toggle("on", c === btn));
+        form.frequency.value = btn.dataset.freq;
+        sheet.querySelector("#dueLabel").textContent = btn.dataset.freq === "once" ? "Due date" : (isEdit ? "Next due date" : "First due date");
+      });
+      sheet.querySelectorAll(".switch").forEach(sw => sw.addEventListener("click", () => {
+        sw.classList.toggle("on");
+        form[sw.dataset.toggle].value = sw.classList.contains("on") ? 1 : 0;
+      }));
+      if (!isEdit) setTimeout(() => form.name.focus(), 320);
+    }
+    function saveBillFromForm() {
+      const form = document.getElementById("billForm");
+      if (!form) return;
+      const name = form.name.value.trim();
+      const amount = parseAmount(form.amount.value);
+      const due = form.due.value;
+      if (!name) { form.name.focus(); toast("Give the bill a name"); return; }
+      if (!due) { form.due.focus(); toast("Pick a due date"); return; }
+      const editId = form.dataset.editId;
+      if (editId) {
+        const b = state.bills.find(x => x.id === editId);
+        if (!b) return;
+        Object.assign(b, { name, amount, category: form.category.value, frequency: form.frequency.value, autopay: form.autopay.value === "1", variable: form.variable.value === "1", notes: form.notes.value.trim() });
+        if (due !== form.dataset.origDue) {
+          // The user moved the next due date: earlier unpaid occurrences are dropped, history is kept.
+          b.anchor = due; b.since = due;
+        }
+        toast(`Saved ${name}`);
+      } else {
+        state.bills.push({ id: uid(), name, amount, category: form.category.value, frequency: form.frequency.value, anchor: due, since: due, autopay: form.autopay.value === "1", variable: form.variable.value === "1", notes: form.notes.value.trim(), paused: false, createdAt: new Date().toISOString() });
+        toast(`Added ${name}`);
+      }
+      save();
+      closeSheet();
+      render();
+    }
+
+    // ---------- Occurrence sheet ----------
+    function openOccurrence(billId, due) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) return;
+      const p = paymentMap().get(billId + "|" + due) || null;
+      const o = { bill, due, payment: p };
+      const status = p ? (p.skipped ? `Skipped` : `Paid ${shortDate(p.paidAt.slice(0, 10))}`) : dueText(due);
+      const html = `
+        <div class="sheet-head"><span></span><button class="link" data-action="closeSheet">Done</button></div>
+        <div class="occ-head">${iconHtml(bill)}<div><div class="n">${esc(bill.name)}</div><div class="s">${esc(cat(bill.category).name)} · ${freq(bill.frequency).name}${bill.autopay ? " · Autopay" : ""}</div></div></div>
+        <div class="muted" style="font-size:14px">${status} · due ${shortDate(due)}</div>
+        <div class="occ-amt">${p && p.skipped ? "—" : fmt(occAmount(o))}</div>
+        ${bill.notes ? `<div class="card" style="font-size:15px;white-space:pre-wrap">${esc(bill.notes)}</div>` : ""}
+        ${p ? `<button class="btn secondary" data-action="unpaid" data-bill="${bill.id}" data-due="${due}">${p.skipped ? "Un-skip" : "Mark as unpaid"}</button>`
+            : `<button class="btn green" data-action="paid" data-bill="${bill.id}" data-due="${due}">✓ Mark as paid</button>
+               <button class="btn secondary" data-action="skip" data-bill="${bill.id}" data-due="${due}">Skip this one</button>`}
+        <button class="btn ghost" data-action="edit" data-bill="${bill.id}">Edit bill</button>`;
+      openSheet(html);
+    }
+    function openPaidAmount(billId, due) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) return;
+      const html = `
+        <div class="sheet-head"><button class="link" data-action="closeSheet">Cancel</button><h2>Amount paid</h2><span></span></div>
+        <div class="muted" style="margin-bottom:12px">${esc(bill.name)} · due ${shortDate(due)}</div>
+        <form id="paidForm" onsubmit="return false">
+          <div class="amount-wrap"><span class="cur">$</span><input class="input" name="amount" inputmode="decimal" value="${bill.amount}" /></div>
+          <button class="btn green" style="margin-top:14px" data-action="paidConfirm" data-bill="${billId}" data-due="${due}">✓ Mark as paid</button>
+        </form>`;
+      openSheet(html);
+      setTimeout(() => { const i = document.querySelector("#paidForm input"); if (i) { i.focus(); i.select(); } }, 320);
+    }
+
+    // ---------- ICS import ----------
+    function parseIcs(text) {
+      const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+      const unfolded = [];
+      for (const line of lines) {
+        if ((line.startsWith(" ") || line.startsWith("\t")) && unfolded.length) unfolded[unfolded.length - 1] += line.slice(1);
+        else unfolded.push(line);
+      }
+      const events = [];
+      let cur = null;
+      for (const line of unfolded) {
+        if (line === "BEGIN:VEVENT") { cur = {}; continue; }
+        if (line === "END:VEVENT") { if (cur) events.push(cur); cur = null; continue; }
+        if (!cur) continue;
+        const idx = line.indexOf(":");
+        if (idx < 0) continue;
+        const left = line.slice(0, idx), value = line.slice(idx + 1);
+        const [prop, ...params] = left.split(";");
+        const key = prop.toUpperCase();
+        if (key === "SUMMARY") cur.summary = unescapeIcs(value);
+        else if (key === "DESCRIPTION") cur.description = unescapeIcs(value);
+        else if (key === "DTSTART") cur.dtstart = icsDate(value, params);
+        else if (key === "RRULE") cur.rrule = value;
+        else if (key === "UID") cur.uid = value;
+        else if (key === "STATUS") cur.status = value.toUpperCase();
+        else if (key === "RECURRENCE-ID") cur.recurrenceId = value;
+      }
+      return events;
+    }
+    function unescapeIcs(s) { return s.replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\"); }
+    function icsDate(value, params) {
+      const m = value.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/);
+      if (!m) return null;
+      if (m[7] === "Z" && m[4]) {
+        const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)));
+        return toKey(d);
+      }
+      return `${m[1]}-${m[2]}-${m[3]}`;
+    }
+    function rruleToFrequency(rrule) {
+      if (!rrule) return { frequency: "once" };
+      const parts = Object.fromEntries(rrule.split(";").map(p => { const [k, v] = p.split("="); return [k.toUpperCase(), v]; }));
+      const interval = parseInt(parts.INTERVAL || "1", 10);
+      const f = (parts.FREQ || "").toUpperCase();
+      let frequency = null;
+      if (f === "WEEKLY") frequency = interval === 2 ? "biweekly" : (interval === 1 ? "weekly" : null);
+      else if (f === "MONTHLY") frequency = interval === 3 ? "quarterly" : (interval === 12 ? "yearly" : (interval === 1 ? "monthly" : null));
+      else if (f === "YEARLY") frequency = interval === 1 ? "yearly" : null;
+      else if (f === "DAILY" && interval === 7) frequency = "weekly";
+      else if (f === "DAILY" && interval === 14) frequency = "biweekly";
+      let until = null;
+      if (parts.UNTIL) until = icsDate(parts.UNTIL, []);
+      const byMonthDay = parts.BYMONTHDAY ? parseInt(parts.BYMONTHDAY.split(",")[0], 10) : null;
+      return { frequency: frequency || "monthly", unsupported: !frequency, until, byMonthDay };
+    }
+    function guessCategory(text) {
+      const t = " " + text.toLowerCase() + " ";
+      let best = "other", bestLen = 0;
+      for (const [id, words] of Object.entries(CATEGORY_KEYWORDS)) {
+        for (const w of words) {
+          if (t.includes(w) && w.length > bestLen) { best = id; bestLen = w.length; }
+        }
+      }
+      return best;
+    }
+    function extractAmount(text) {
+      const m = String(text || "").match(/\$\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/);
+      if (m) return parseAmount(m[1]);
+      const m2 = String(text || "").match(/(\d+(?:\.\d{2}))\s?(?:usd|dollars)/i);
+      return m2 ? parseAmount(m2[1]) : 0;
+    }
+    function buildImportDraft(events) {
+      const today = todayKey();
+      const existingNames = new Set(state.bills.map(b => b.name.trim().toLowerCase()));
+      const seen = new Set();
+      const items = [];
+      for (const ev of events) {
+        if (!ev.summary || !ev.dtstart || ev.recurrenceId) continue;
+        if (ev.status === "CANCELLED") continue;
+        const key = (ev.uid || ev.summary) + "";
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const r = rruleToFrequency(ev.rrule);
+        if (r.until && r.until < today) continue;
+        if (r.frequency === "once" && ev.dtstart < addDaysKey(today, -7)) continue;
+        let anchor = ev.dtstart;
+        if (r.byMonthDay && (r.frequency === "monthly" || r.frequency === "quarterly")) {
+          const d = fromKey(anchor);
+          anchor = toKey(new Date(d.getFullYear(), d.getMonth(), Math.min(r.byMonthDay, daysInMonth(d.getFullYear(), d.getMonth()))));
+        }
+        let name = ev.summary.replace(/\s+/g, " ").trim();
+        const text = name + " " + (ev.description || "");
+        // "Rent $1,850" -> "Rent" once the amount has been captured
+        name = name.replace(/[\-–:(]?\s*\$\s?\d[\d,]*(?:\.\d{1,2})?\s*\)?/g, " ").replace(/\s+/g, " ").trim() || name;
+        const dup = existingNames.has(name.toLowerCase());
+        items.push({
+          id: uid(), name, amount: extractAmount(text), category: guessCategory(text), frequency: r.frequency, anchor,
+          selected: !dup && r.frequency !== "once", dup, unsupported: r.unsupported, notes: (ev.description || "").trim().slice(0, 500),
+        });
+      }
+      items.sort((a, b) => (a.frequency === "once") - (b.frequency === "once") || a.name.localeCompare(b.name));
+      return items;
+    }
+    function importNextDue(item) {
+      const temp = { id: "tmp", frequency: item.frequency, anchor: item.anchor, since: todayKey() };
+      return nextUnpaid(temp, new Map());
+    }
+    function openImportSheet() {
+      const html = `
+        <div class="sheet-head"><button class="link" data-action="closeSheet">Close</button><h2>Google Calendar</h2><span></span></div>
+        <div class="help">Google Calendar can export your calendar as an <b>.ics</b> file. Bring that file here and pick which events are bills.
+          <ol>
+            <li><b>On a computer:</b> calendar.google.com → ⚙️ Settings → <b>Import &amp; export</b> → <b>Export</b>. Unzip, then AirDrop or save the .ics to your iPhone.</li>
+            <li><b>On your iPhone:</b> in Google Calendar settings for the bills calendar, copy the <b>Secret address in iCal format</b>, open it in Safari, and save the file to Files.</li>
+          </ol>
+          Recurring events are checked by default. Amounts found in the event title (like "Rent $1,450") fill in automatically.</div>
+        <button class="btn" data-action="pickIcs">📂 Choose .ics file</button>
+        <div class="field" style="margin-top:16px"><label>Or paste the calendar text</label><textarea class="input" id="icsPaste" placeholder="BEGIN:VCALENDAR…"></textarea></div>
+        <button class="btn secondary" data-action="parsePaste">Read pasted text</button>`;
+      openSheet(html);
+    }
+    function openImportReview(items) {
+      importDraft = items;
+      if (!items.length) { toast("No usable events found in that calendar"); return; }
+      const html = `
+        <div class="sheet-head"><button class="link" data-action="closeSheet">Cancel</button><h2>Review bills</h2><button class="link" data-action="importToggleAll">All / none</button></div>
+        <div class="help">Uncheck anything that isn't a bill. Fix names, amounts, and categories here, or later from the Bills tab.</div>
+        <input class="input" id="importFilter" placeholder="Filter…" style="margin-bottom:10px" />
+        <div class="list" id="importList">${items.map(importRowHtml).join("")}</div>
+        <div class="sticky-bottom"><button class="btn" data-action="importConfirm" id="importBtn">Import ${items.filter(i => i.selected).length} bills</button></div>`;
+      const sheet = openSheet(html);
+      const list = sheet.querySelector("#importList");
+      list.addEventListener("click", e => {
+        const chk = e.target.closest(".check"); if (!chk) return;
+        const item = items.find(i => i.id === chk.dataset.item);
+        item.selected = !item.selected;
+        chk.classList.toggle("on", item.selected); chk.textContent = item.selected ? "✓" : "";
+        chk.closest(".import-row").classList.toggle("off", !item.selected);
+        updateImportBtn();
+      });
+      list.addEventListener("input", e => {
+        const row = e.target.closest(".import-row"); if (!row) return;
+        const item = items.find(i => i.id === row.dataset.item);
+        if (e.target.name === "name") item.name = e.target.value;
+        if (e.target.name === "amount") item.amount = parseAmount(e.target.value);
+        if (e.target.name === "category") item.category = e.target.value;
+        if (e.target.name === "frequency") { item.frequency = e.target.value; row.querySelector(".next").textContent = nextText(item); }
+      });
+      sheet.querySelector("#importFilter").addEventListener("input", e => {
+        const q = e.target.value.toLowerCase();
+        list.querySelectorAll(".import-row").forEach(r => {
+          const item = items.find(i => i.id === r.dataset.item);
+          r.classList.toggle("hidden", q && !item.name.toLowerCase().includes(q));
+        });
+      });
+      function nextText(item) { const n = importNextDue(item); return n ? "Next: " + shortDate(n) : "No upcoming date"; }
+      function updateImportBtn() { const n = items.filter(i => i.selected).length; sheet.querySelector("#importBtn").textContent = n ? `Import ${n} bill${n === 1 ? "" : "s"}` : "Nothing selected"; }
+    }
+    function importRowHtml(item) {
+      const next = importNextDue(item);
+      return `<div class="import-row ${item.selected ? "" : "off"}" data-item="${item.id}">
+        <button class="check ${item.selected ? "on" : ""}" data-item="${item.id}">${item.selected ? "✓" : ""}</button>
+        <div>
+          <input class="input sm name" name="name" value="${esc(item.name)}" />
+          <div class="grid">
+            <div class="amount-wrap"><span class="cur" style="font-size:15px;left:10px">$</span><input class="input sm" name="amount" inputmode="decimal" value="${item.amount || ""}" placeholder="0.00" style="padding-left:24px;font-size:15px;font-weight:600" /></div>
+            <select class="input sm" name="category">${CATEGORIES.map(c => `<option value="${c.id}" ${c.id === item.category ? "selected" : ""}>${c.icon} ${esc(c.name)}</option>`).join("")}</select>
+            <select class="input sm" name="frequency">${FREQS.map(f => `<option value="${f.id}" ${f.id === item.frequency ? "selected" : ""}>${f.name}</option>`).join("")}</select>
+            <div class="meta next" style="align-self:center">${next ? "Next: " + shortDate(next) : "No upcoming date"}</div>
+          </div>
+          ${item.dup ? `<div class="meta" style="color:var(--orange)">Already in your bills</div>` : ""}
+          ${item.unsupported ? `<div class="meta" style="color:var(--orange)">Unusual repeat rule, check the frequency</div>` : ""}
+        </div>
+      </div>`;
+    }
+    function confirmImport() {
+      if (!importDraft) return;
+      const chosen = importDraft.filter(i => i.selected && i.name.trim());
+      if (!chosen.length) { toast("Select at least one bill"); return; }
+      const today = todayKey();
+      for (const i of chosen) {
+        state.bills.push({ id: uid(), name: i.name.trim(), amount: i.amount || 0, category: i.category, frequency: i.frequency, anchor: i.anchor, since: i.frequency === "once" ? i.anchor : today, autopay: false, variable: false, notes: i.notes || "", paused: false, createdAt: new Date().toISOString(), source: "gcal" });
+      }
+      save();
+      importDraft = null;
+      closeSheet();
+      currentTab = "bills";
+      render();
+      toast(`Imported ${chosen.length} bill${chosen.length === 1 ? "" : "s"}`);
+    }
+    function handleIcsText(text) {
+      if (!text || !text.includes("BEGIN:VEVENT")) { toast("That doesn't look like a calendar file"); return; }
+      let events;
+      try { events = parseIcs(text); } catch (e) { toast("Couldn't read that calendar"); return; }
+      openImportReview(buildImportDraft(events));
+    }
+
+    // ---------- Backup ----------
+    function exportJson() {
+      const data = JSON.stringify({ app: "bills", version: 1, exportedAt: new Date().toISOString(), ...state }, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const file = new File([blob], `bills-backup-${todayKey()}.json`, { type: "application/json" });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: "Bills backup" }).catch(() => {});
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    function importJsonText(text) {
+      try {
+        const data = JSON.parse(text);
+        if (!Array.isArray(data.bills)) throw new Error("bad");
+        const mode = state.bills.length ? (confirm("Replace everything with the backup? Press Cancel to merge instead.") ? "replace" : "merge") : "replace";
+        if (mode === "replace") { state = { bills: data.bills, payments: data.payments || [], settings: data.settings || {} }; }
+        else {
+          const ids = new Set(state.bills.map(b => b.id));
+          for (const b of data.bills) if (!ids.has(b.id)) state.bills.push(b);
+          const pk = new Set(state.payments.map(p => p.billId + "|" + p.due));
+          for (const p of (data.payments || [])) if (!pk.has(p.billId + "|" + p.due)) state.payments.push(p);
+        }
+        save(); render();
+        toast(`Restored ${data.bills.length} bills`);
+      } catch (e) { toast("That file isn't a Bills backup"); }
+    }
+
+    // ---------- Events ----------
+    document.addEventListener("click", e => {
+      const el = e.target.closest("[data-action]");
+      if (!el) return;
+      const a = el.dataset.action;
+      const billId = el.dataset.bill, due = el.dataset.due;
+      if (a === "tab") { currentTab = el.dataset.tab; window.scrollTo(0, 0); render(); }
+      else if (a === "add") { closeSheet(); openBillForm(null); }
+      else if (a === "edit") { const b = state.bills.find(x => x.id === billId); if (b) { closeSheet(); setTimeout(() => openBillForm(b), sheetOpen() ? 200 : 0); } }
+      else if (a === "closeSheet") closeSheet();
+      else if (a === "saveBill") saveBillFromForm();
+      else if (a === "deleteBill") deleteBill(billId);
+      else if (a === "togglePause") { const b = state.bills.find(x => x.id === billId); if (b) { b.paused = !b.paused; save(); closeSheet(); render(); toast(b.paused ? `Paused ${b.name}` : `Resumed ${b.name}`); } }
+      else if (a === "occ") openOccurrence(billId, due);
+      else if (a === "paid") {
+        e.stopPropagation();
+        const b = state.bills.find(x => x.id === billId);
+        if (!b) return;
+        if (b.variable) { closeSheet(); setTimeout(() => openPaidAmount(billId, due), sheetOpen() ? 200 : 0); }
+        else { closeSheet(); markPaid(billId, due); }
+      }
+      else if (a === "paidConfirm") { const f = document.getElementById("paidForm"); const amt = parseAmount(f.amount.value); closeSheet(); markPaid(billId, due, amt); }
+      else if (a === "unpaid") { e.stopPropagation(); closeSheet(); markUnpaid(billId, due); }
+      else if (a === "skip") { closeSheet(); markSkipped(billId, due); }
+      else if (a === "monthPrev") { monthCursor = addMonthsClamped(monthCursor, -1); render(); }
+      else if (a === "monthNext") { monthCursor = addMonthsClamped(monthCursor, 1); render(); }
+      else if (a === "monthToday") { monthCursor = startOfMonthKey(todayKey()); render(); }
+      else if (a === "importIcs") openImportSheet();
+      else if (a === "pickIcs") document.getElementById("icsFile").click();
+      else if (a === "parsePaste") handleIcsText(document.getElementById("icsPaste").value);
+      else if (a === "importToggleAll") {
+        if (!importDraft) return;
+        const any = importDraft.some(i => i.selected);
+        importDraft.forEach(i => i.selected = !any);
+        openImportReview(importDraft);
+      }
+      else if (a === "importConfirm") confirmImport();
+      else if (a === "exportJson") exportJson();
+      else if (a === "importJson") document.getElementById("jsonFile").click();
+      else if (a === "resetAll") { if (confirm("Erase ALL bills and payments on this device?")) { state = { bills: [], payments: [], settings: {} }; save(); render(); toast("All data erased"); } }
+    });
+    document.getElementById("icsFile").addEventListener("change", e => {
+      const f = e.target.files[0]; if (!f) return;
+      f.text().then(handleIcsText); e.target.value = "";
+    });
+    document.getElementById("jsonFile").addEventListener("change", e => {
+      const f = e.target.files[0]; if (!f) return;
+      f.text().then(importJsonText); e.target.value = "";
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeSheet();
+      if (e.key === "Enter" && e.target.tagName === "INPUT" && document.getElementById("billForm")) { e.preventDefault(); saveBillFromForm(); }
+      if (e.key === "Enter" && e.target.tagName === "INPUT" && document.getElementById("paidForm")) { e.preventDefault(); document.querySelector('[data-action="paidConfirm"]').click(); }
+    });
+    // Re-render when the app comes back to the foreground (new day, etc.)
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+
+    render();
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
