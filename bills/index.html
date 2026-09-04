@@ -714,7 +714,8 @@
       const active = state.bills.filter(b => !b.paused);
       if (!state.bills.length) {
         return `<div class="card empty"><div class="big-emoji">🧾</div><b>No bills yet</b><br>Add your first bill, or import them from your Google Calendar.<br>
-          <button class="btn" data-action="add">Add a bill</button>
+          <button class="btn" data-action="loadStarter">Load my starter bills</button>
+          <button class="btn secondary" data-action="add" style="margin-top:8px">Add a bill</button>
           <button class="btn secondary" data-action="tab" data-tab="more" style="margin-top:8px">Import from Google Calendar</button></div>`;
       }
       const pm = paymentMap();
@@ -894,6 +895,7 @@
       const standalone = window.navigator.standalone || window.matchMedia("(display-mode: standalone)").matches;
       return `
         <div class="list" style="margin-bottom:14px">
+          <div class="more-item" data-action="loadStarter"><div class="mi" style="background:#ff9f0a">⚡</div><div><div class="mt">Load starter bills</div><div class="md">Add the bills from your calendar list, skipping any you already have</div></div><span class="chev">›</span></div>
           <div class="more-item" data-action="importIcs"><div class="mi" style="background:#4f7be8">📥</div><div><div class="mt">Import from Google Calendar</div><div class="md">Bring in bills from a calendar export (.ics)</div></div><span class="chev">›</span></div>
           <div class="more-item" data-action="addBillFromMore"><div class="mi" style="background:#30d158">➕</div><div><div class="mt">Add a bill</div><div class="md">Name, amount, category, and due date</div></div><span class="chev">›</span></div>
           <div class="more-item" data-action="addItem"><div class="mi" style="background:#10b981">🛒</div><div><div class="mt">Add a supply item</div><div class="md">Diapers, formula, paper goods: usage and price</div></div><span class="chev">›</span></div>
@@ -904,7 +906,7 @@
           <div class="more-item" data-action="resetAll"><div class="mi" style="background:#ff3b30">🗑️</div><div><div class="mt" style="color:var(--red)">Erase all data</div><div class="md">Removes every bill and payment on this device</div></div><span class="chev">›</span></div>
         </div>
         ${standalone ? "" : `<div class="card"><b>📲 Add to your Home Screen</b><div class="help" style="margin-top:6px">In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>. The app opens full screen and works offline.</div></div>`}
-        <div class="help center">Data is stored only on this device. Back it up before switching phones.<br>v1.1</div>`;
+        <div class="help center">Data is stored only on this device. Back it up before switching phones.<br>v1.2</div>`;
     }
 
     // ---------- Bill form ----------
@@ -1308,6 +1310,37 @@
       openImportReview(buildImportDraft(events));
     }
 
+    // ---------- Starter bills (starter.json next to the app) ----------
+    async function loadStarter() {
+      let data;
+      try {
+        const res = await fetch("starter.json?t=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) throw new Error(res.status);
+        data = await res.json();
+      } catch (e) { toast("Couldn't load the starter list"); return; }
+      const existing = new Set(state.bills.map(b => b.name.trim().toLowerCase()));
+      const now = new Date();
+      const y = now.getFullYear(), m0 = now.getMonth();
+      let added = 0, skipped = 0;
+      for (const b of (data.bills || [])) {
+        if (!b.name || existing.has(b.name.trim().toLowerCase())) { skipped++; continue; }
+        const day = Math.min(Math.max(1, Number(b.day) || 1), daysInMonth(y, m0));
+        const anchor = b.date || toKey(new Date(y, m0, day));
+        state.bills.push({
+          id: uid(), name: b.name.trim(), amount: Number(b.amount) || 0, category: cat(b.category).id, frequency: freq(b.frequency).id,
+          anchor, since: anchor, autopay: !!b.autopay, variable: !!b.variable, notes: b.notes || "", paused: false,
+          createdAt: new Date().toISOString(), source: "starter",
+        });
+        existing.add(b.name.trim().toLowerCase());
+        added++;
+      }
+      save();
+      closeSheet();
+      currentTab = "upcoming";
+      render();
+      toast(added ? `Added ${added} bill${added === 1 ? "" : "s"}${skipped ? ` · ${skipped} already there` : ""}` : "All starter bills are already added");
+    }
+
     // ---------- Backup ----------
     function exportJson() {
       const data = JSON.stringify({ app: "bills", version: 1, exportedAt: new Date().toISOString(), ...state }, null, 2);
@@ -1374,6 +1407,7 @@
       else if (a === "monthNext") { monthCursor = addMonthsClamped(monthCursor, 1); render(); }
       else if (a === "monthToday") { monthCursor = startOfMonthKey(todayKey()); render(); }
       else if (a === "importIcs") openImportSheet();
+      else if (a === "loadStarter") loadStarter();
       else if (a === "pickIcs") document.getElementById("icsFile").click();
       else if (a === "parsePaste") handleIcsText(document.getElementById("icsPaste").value);
       else if (a === "importToggleAll") {

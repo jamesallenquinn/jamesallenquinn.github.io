@@ -1,0 +1,23 @@
+{
+  "name": "Starter bills",
+  "bills": [
+    { "name": "Rent",               "amount": 2700,   "category": "housing",       "frequency": "monthly", "day": 1 },
+    { "name": "Utilities",          "amount": 500,    "category": "utilities",     "frequency": "monthly", "day": 1,  "variable": true },
+    { "name": "Amazon Prime",       "amount": 16.15,  "category": "subscriptions", "frequency": "monthly", "day": 2 },
+    { "name": "Renter Insurance",   "amount": 25,     "category": "insurance",     "frequency": "monthly", "day": 6 },
+    { "name": "Netflix",            "amount": 26.99,  "category": "subscriptions", "frequency": "monthly", "day": 7 },
+    { "name": "Peacock",            "amount": 17,     "category": "subscriptions", "frequency": "monthly", "day": 8 },
+    { "name": "Claude",             "amount": 200,    "category": "subscriptions", "frequency": "monthly", "day": 11 },
+    { "name": "Honda Payment",      "amount": 776.93, "category": "transport",     "frequency": "monthly", "day": 11 },
+    { "name": "Amazon Prime #2",    "amount": 16.23,  "category": "subscriptions", "frequency": "monthly", "day": 13, "notes": "Second Amazon Prime charge from the calendar (13th)" },
+    { "name": "Netlify",            "amount": 9,      "category": "subscriptions", "frequency": "monthly", "day": 14 },
+    { "name": "Karate",             "amount": 154,    "category": "health",        "frequency": "monthly", "day": 15 },
+    { "name": "Business Insurance", "amount": 152,    "category": "insurance",     "frequency": "monthly", "day": 20 },
+    { "name": "Spotify",            "amount": 13,     "category": "subscriptions", "frequency": "monthly", "day": 21 },
+    { "name": "Internet",           "amount": 85,     "category": "phone",         "frequency": "monthly", "day": 28 },
+    { "name": "Geico",              "amount": 120,    "category": "insurance",     "frequency": "monthly", "day": 29 },
+    { "name": "Ring",               "amount": 10,     "category": "subscriptions", "frequency": "monthly", "day": 29 },
+    { "name": "Blue Shield",        "amount": 515,    "category": "health",        "frequency": "monthly", "day": 30, "notes": "Payment plan. Balance owed $2,126 as of Sep 2026, about 4 more payments." },
+    { "name": "ChatGPT",            "amount": 20,     "category": "subscriptions", "frequency": "monthly", "day": 30 }
+  ]
+}
