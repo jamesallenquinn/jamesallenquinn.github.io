@@ -906,7 +906,7 @@
           <div class="more-item" data-action="resetAll"><div class="mi" style="background:#ff3b30">🗑️</div><div><div class="mt" style="color:var(--red)">Erase all data</div><div class="md">Removes every bill and payment on this device</div></div><span class="chev">›</span></div>
         </div>
         ${standalone ? "" : `<div class="card"><b>📲 Add to your Home Screen</b><div class="help" style="margin-top:6px">In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>. The app opens full screen and works offline.</div></div>`}
-        <div class="help center">Data is stored only on this device. Back it up before switching phones.<br>v1.2</div>`;
+        <div class="help center">Data is stored only on this device. Back it up before switching phones.<br>v1.3</div>`;
     }
 
     // ---------- Bill form ----------
@@ -1321,9 +1321,19 @@
       const existing = new Set(state.bills.map(b => b.name.trim().toLowerCase()));
       const now = new Date();
       const y = now.getFullYear(), m0 = now.getMonth();
-      let added = 0, skipped = 0;
+      let added = 0, skipped = 0, replaced = 0;
       for (const b of (data.bills || [])) {
         if (!b.name || existing.has(b.name.trim().toLowerCase())) { skipped++; continue; }
+        // A starter bill can replace an older starter bill it supersedes (only ones the starter list created, never hand-added bills).
+        for (const oldName of (b.replaces || [])) {
+          const victims = state.bills.filter(x => x.source === "starter" && x.name.trim().toLowerCase() === oldName.trim().toLowerCase());
+          for (const v of victims) {
+            state.bills = state.bills.filter(x => x.id !== v.id);
+            state.payments = state.payments.filter(pp => pp.billId !== v.id);
+            existing.delete(v.name.trim().toLowerCase());
+            replaced++;
+          }
+        }
         const day = Math.min(Math.max(1, Number(b.day) || 1), daysInMonth(y, m0));
         const anchor = b.date || toKey(new Date(y, m0, day));
         state.bills.push({
@@ -1338,7 +1348,7 @@
       closeSheet();
       currentTab = "upcoming";
       render();
-      toast(added ? `Added ${added} bill${added === 1 ? "" : "s"}${skipped ? ` · ${skipped} already there` : ""}` : "All starter bills are already added");
+      toast(added ? `Added ${added} bill${added === 1 ? "" : "s"}${replaced ? ` · replaced ${replaced}` : ""}${skipped ? ` · ${skipped} already there` : ""}` : "All starter bills are already added");
     }
 
     // ---------- Backup ----------
